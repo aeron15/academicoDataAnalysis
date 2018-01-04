@@ -36,7 +36,6 @@ tidy_books <- original_books %>%
 
 data(stop_words)
 
-
 # gutenberg ----------------------------------------------------------------
 
 hgwells <- gutenberg_download(c(35, 36, 5230, 159))
@@ -82,3 +81,40 @@ stop_words_df %<>% rbind(stop_words_spanish)
 
 stop_words_df %<>% distinct()
 
+
+
+# test --------------------------------------------------------------------
+
+bronte <- gutenberg_download(c(1260, 768, 969, 9182, 767))
+
+tidy_bronte <- bronte %>%
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words)
+
+tidy_bronte %>%
+  count(word, sort = TRUE)
+
+frequency <- bind_rows(mutate(tidy_bronte, author = "Brontë Sisters"),
+                       mutate(tidy_hgwells, author = "H.G. Wells"), 
+                       mutate(tidy_books, author = "Jane Austen")) %>% 
+  mutate(word = str_extract(word, "[a-z']+")) %>%
+  count(author, word) %>%
+  group_by(author) %>%
+  mutate(proportion = n / sum(n)) %>% 
+  select(-n) %>% 
+  spread(author, proportion) %>% 
+  gather(author, proportion, `Brontë Sisters`:`H.G. Wells`)
+
+
+tmp <- bind_rows(mutate(tidy_bronte, author = "Brontë Sisters"),
+          mutate(tidy_hgwells, author = "H.G. Wells"), 
+          mutate(tidy_books, author = "Jane Austen")) %>%
+  mutate(word = str_extract(word, "[a-z']+")) %>%
+  count(author, word)%>%
+  group_by(author) %>%
+  mutate(proportion = n / sum(n))
+
+tmp %<>%
+  select(-n) %>%
+  spread(author, proportion) %>% 
+  gather(author, proportion, `Brontë Sisters`:`H.G. Wells`)
